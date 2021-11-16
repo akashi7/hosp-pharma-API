@@ -1,0 +1,33 @@
+{
+  "name": "backapp",
+  "version": "1.0.0",
+  "description": "easy access hospital patient info",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "babel-node ./src/",
+    "server": "nodemon --exec babel-node ./src/"
+  },
+  "author": "akashi chris",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/cli": "^7.12.17",
+    "@babel/core": "^7.12.17",
+    "@babel/node": "^7.12.17",
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.12.17",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "joi": "^17.3.0",
+    "jsonwebtoken": "^8.5.1",
+    "morgan": "^1.10.0",
+    "mysql": "^2.18.1",
+    "nexmo": "^2.9.1"
+  },
+  "devDependencies": {
+    "@babel/register": "^7.12.13",
+    "nodemon": "^2.0.7"
+  }
+}
