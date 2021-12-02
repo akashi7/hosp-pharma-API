@@ -7,12 +7,12 @@ import { hash, compare } from "bcryptjs";
 config();
 
 
-class authController {
+export default class authController {
 
   //create hospital
   static CreateHospital(req, res) {
+
     const { code, h_name, password, confirmPassword } = req.body;
-    const { longitude, latitude } = req.query;
 
     if (password !== confirmPassword) {
       res.send({
@@ -34,14 +34,16 @@ class authController {
             }
             else {
               let hashedPassword = await hash(password, 8);
+              let is_hadmin = '1';
               connection.query("INSERT INTO hospitals SET?", {
                 code,
-                h_name, longitude, latitude,
-                password: hashedPassword
+                h_name,
+                password: hashedPassword,
+                is_hadmin
               }, (err, results) => {
                 if (err) console.log("Error", err);
                 else {
-                  const token = sign({ code, h_name, latitude, longitude }, process.env.JWT_SECRET, { expiresIn: "5d" });
+                  const token = sign({ code, h_name }, process.env.JWT_SECRET, { expiresIn: "5d" });
                   res.send({
                     status: 200,
                     token
@@ -60,7 +62,8 @@ class authController {
   //create pharmacy
 
   static CreatePharmacy(req, res) {
-    const { code, longitude, latitude, ph_name, password, confirmPassword } = req.body;
+    const { code, ph_name, password, confirmPassword } = req.body;
+    const { location } = req.query;
 
     if (password !== confirmPassword) {
       res.send({
@@ -82,14 +85,16 @@ class authController {
             }
             else {
               let hashedPassword = await hash(password, 8);
+              let is_phadmin = '1';
               connection.query("INSERT INTO pharmacy SET?", {
                 code,
-                ph_name, longitude, latitude,
-                password: hashedPassword
+                ph_name, location,
+                password: hashedPassword,
+                is_phadmin
               }, (err, results) => {
                 if (err) console.log("Error", err);
                 else {
-                  const token = sign({ code, ph_name, longitude, latitude }, process.env.JWT_SECRET, { expiresIn: "5d" });
+                  const token = sign({ code, ph_name, location }, process.env.JWT_SECRET, { expiresIn: "5d" });
                   res.send({
                     status: 200,
                     token
@@ -104,7 +109,10 @@ class authController {
     }
   }
 
+  //create patient
+
   static CreatePatients(req, res) {
+
     const { full_names, phone, id_number } = req.body;
 
     db.getConnection((err, connection) => {
@@ -146,8 +154,12 @@ class authController {
   }
 
 
+  //LOGINS
+
   static HospitalLogin(req, res) {
+
     const { code, password } = req.body;
+
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
@@ -167,8 +179,8 @@ class authController {
               });
             }
             else {
-              const { code, h_name, latitude, longitude } = result[0];
-              const token = sign({ code, h_name, latitude, longitude }, process.env.JWT_SECRET, { expiresIn: "5d" });
+              const { code, h_name, is_hadmin } = result[0];
+              const token = sign({ code, h_name, is_hadmin }, process.env.JWT_SECRET, { expiresIn: "5d" });
               res.send({
                 status: 200,
                 token
@@ -182,7 +194,9 @@ class authController {
   }
 
   static PharmacyLogin(req, res) {
+
     const { code, password } = req.body;
+
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
@@ -202,8 +216,8 @@ class authController {
               });
             }
             else {
-              const { code, longitude, latitude, ph_name } = result[0];
-              const token = sign({ code, ph_name, longitude, latitude }, process.env.JWT_SECRET, { expiresIn: "5d" });
+              const { code, ph_name, is_phadmin } = result[0];
+              const token = sign({ code, ph_name, is_phadmin }, process.env.JWT_SECRET, { expiresIn: "5d" });
               res.send({
                 status: 200,
                 token
@@ -217,7 +231,9 @@ class authController {
   }
 
   static doctorsLogin(req, res) {
+
     const { phone, password } = req.body;
+
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
@@ -237,8 +253,8 @@ class authController {
               });
             }
             if (result[0].full_names === 'reception') {
-              const { phone, code, h_name, full_names } = result[0];
-              const token = sign({ code, h_name, phone, full_names }, process.env.JWT_SECRET, { expiresIn: "5d" });
+              const { phone, code, h_name, full_names, is_doc } = result[0];
+              const token = sign({ code, h_name, phone, full_names, is_doc }, process.env.JWT_SECRET, { expiresIn: "5d" });
               res.send({
                 status: 201,
                 token
@@ -258,9 +274,4 @@ class authController {
       }
     });
   }
-
-
-
 }
-
-export default authController;

@@ -5,6 +5,7 @@ import morgan from 'morgan';
 //routes
 
 import authRouter from './routes/authRoutes';
+import hospRouter from './routes/HospRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 7000;
@@ -16,6 +17,7 @@ app.use(json());
 app.use(urlencoded({ extended: false }));
 
 app.use("/api/auth", authRouter);
+app.use("/api/hospital", hospRouter);
 
 
 

@@ -1,13 +1,13 @@
 import { db } from "../config/database";
-import { hash, compare } from "bcryptjs";
+import { hash } from "bcryptjs";
 
 
 
-class hospitalController {
+export default class hospitalController {
 
   static createDoctors(req, res) {
     const { code, h_name } = req.hosp;
-    const { full_names, phone, password, confirmPassword } = req.body;
+    const { full_names, phone, password, confirmPassword, role } = req.body;
 
     if (password !== confirmPassword) {
       res.send({
@@ -29,12 +29,15 @@ class hospitalController {
             }
             else {
               let hashedPassword = await hash(password, 8);
+              let is_doc = '1';
               connection.query("INSERT INTO doctors SET?", {
                 code,
                 h_name,
                 full_names,
                 password: hashedPassword,
-                phone
+                phone,
+                role,
+                is_doc
               }, (err, results) => {
                 if (err) console.log("Error", err);
                 else {
@@ -74,6 +77,8 @@ class hospitalController {
     const { code, h_name } = req.hosp;
     const { full_names, phone, password, confirmPassword } = req.body;
 
+    let role = 'reception';
+
     if (password !== confirmPassword) {
       res.send({
         status: 205,
@@ -94,12 +99,15 @@ class hospitalController {
             }
             else {
               let hashedPassword = await hash(password, 8);
+              let is_doc = '0';
               connection.query("INSERT INTO doctors SET?", {
                 code,
                 h_name,
                 full_names,
                 password: hashedPassword,
-                phone
+                phone,
+                role,
+                is_doc
               }, (err, results) => {
                 if (err) console.log("Error", err);
                 else {
@@ -118,8 +126,5 @@ class hospitalController {
   }
 
 
+
 }
-
-
-
-export default hospitalController;

@@ -1,7 +1,8 @@
 import { db } from "../config/database";
+import { hash, compare } from "bcryptjs";
 
 
-class doctorController {
+export default class doctorController {
 
   static searchPatient(req, res) {
     const { code } = req.body;
@@ -52,12 +53,71 @@ class doctorController {
     });
   }
 
+  static allMedecines(req, res) {
+    db.getConnection((err, connection) => {
+      if (err) console.log("Error", err);
+      else {
+        connection.query("SELECT * FROM medecines", (err, result) => {
+          if (err) console.log("Error", err);
+          else {
+            res.send({
+              status: 200,
+              data: { allMeds: result }
+            });
+          }
+          connection.release();
+        });
+      }
+    });
+  }
 
+  static sendReport(req, res) {
+    const { disease, meds } = req.body;
+    const [...medecines] = meds;
 
+  }
 
+  static EditPassword(req, res) {
+    const { password, confirmPassword, oldPassword } = req.body;
+    const { phone } = req.doctor;
 
-
+    if (password !== confirmPassword) {
+      res.send({
+        status: 301,
+        message: "Password's do not match"
+      });
+    }
+    else {
+      db.getConnection((err, connection) => {
+        if (err) console.log("Error", err);
+        else {
+          connection.query("SELECT * FROM doctors WHERE phone=?", [phone], async (err, result) => {
+            if (err) console.log("Error", err);
+            else {
+              if (!(await compare(oldPassword, result[0].password))) {
+                res.send({
+                  status: 302,
+                  message: "Wrong old password try again !"
+                });
+              }
+              else {
+                let hashedPassword = await hash(password, 8);
+                connection.query("UPDATE doctors SET password=? WHERE phone=?", [hashedPassword, phone], (err, results) => {
+                  if (err) console.log("Error", err);
+                  else {
+                    res.send({
+                      status: 200
+                    });
+                  }
+                  connection.release();
+                });
+              }
+            }
+          });
+        }
+      });
+    }
+  }
 
 }
 
-export default doctorController;
