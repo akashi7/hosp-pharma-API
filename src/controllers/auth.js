@@ -94,13 +94,19 @@ export default class authController {
               }, (err, results) => {
                 if (err) console.log("Error", err);
                 else {
-                  const token = sign({ code, ph_name, location }, process.env.JWT_SECRET, { expiresIn: "5d" });
-                  res.send({
-                    status: 200,
-                    token
+                  connection.query("SELECT * FROM pharmacy WHERE code=?", [code], (err, results) => {
+                    if (err) console.log("Error", err);
+                    else {
+                      const { code, ph_name, is_phadmin } = results[0];
+                      const token = sign({ code, ph_name, is_phadmin }, process.env.JWT_SECRET, { expiresIn: "5d" });
+                      res.send({
+                        status: 200,
+                        token
+                      });
+                    }
+                    connection.release();
                   });
                 }
-                connection.release();
               });
             }
           });
@@ -113,7 +119,7 @@ export default class authController {
 
   static CreatePatients(req, res) {
 
-    const { full_names, phone, id_number } = req.body;
+    const { full_names, phone, id_number, age, district, sector } = req.body;
 
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
@@ -130,7 +136,10 @@ export default class authController {
             connection.query("INSERT INTO patients SET?", {
               full_names,
               phone,
-              id_number
+              id_number,
+              age,
+              district,
+              sector
             }, (err, results) => {
               if (err) console.log("Error", err);
               else {
@@ -200,7 +209,7 @@ export default class authController {
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
-        connection.query("SELECT * FROM pharmacy WHERE code=?", [code], (err, result) => {
+        connection.query("SELECT * FROM pharmacy WHERE code=?", [code], async (err, result) => {
           if (err) console.log("Error", err);
           else if (result.length === 0) {
             res.send({
@@ -237,7 +246,7 @@ export default class authController {
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
-        connection.query("SELECT * FROM doctors WHERE phone=?", [phone], (err, result) => {
+        connection.query("SELECT * FROM doctors WHERE phone=?", [phone], async (err, result) => {
           if (err) console.log("Error", err);
           else if (result.length === 0) {
             res.send({
@@ -252,7 +261,7 @@ export default class authController {
                 message: "Wrong password"
               });
             }
-            if (result[0].full_names === 'reception') {
+            if (result[0].role === 'reception') {
               const { phone, code, h_name, full_names, is_doc } = result[0];
               const token = sign({ code, h_name, phone, full_names, is_doc }, process.env.JWT_SECRET, { expiresIn: "5d" });
               res.send({
@@ -261,8 +270,8 @@ export default class authController {
               });
             }
             else {
-              const { phone, code, h_name, full_names } = result[0];
-              const token = sign({ code, h_name, phone, full_names }, process.env.JWT_SECRET, { expiresIn: "5d" });
+              const { phone, code, h_name, full_names, role, is_doc } = result[0];
+              const token = sign({ code, h_name, phone, full_names, role, is_doc }, process.env.JWT_SECRET, { expiresIn: "5d" });
               res.send({
                 status: 200,
                 token

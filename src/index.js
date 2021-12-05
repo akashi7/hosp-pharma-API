@@ -6,6 +6,8 @@ import morgan from 'morgan';
 
 import authRouter from './routes/authRoutes';
 import hospRouter from './routes/HospRoutes';
+import pharmaRouter from './routes/pharmaRoutes';
+import docRouter from './routes/doctorRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 7000;
@@ -18,6 +20,8 @@ app.use(urlencoded({ extended: false }));
 
 app.use("/api/auth", authRouter);
 app.use("/api/hospital", hospRouter);
+app.use("/api/pharma", pharmaRouter);
+app.use("/api/doc", docRouter);
 
 
 

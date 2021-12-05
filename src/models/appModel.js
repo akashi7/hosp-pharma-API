@@ -18,9 +18,12 @@ export const appSchema = {
   }),
 
   PatientSignUp: Joi.object({
-    full_names: string.regex(/^[A-Za-z]/).max(100).min(4).error(new Error('Full names are required and must be letters')),
+    full_names: string.regex(/^[A-Za-z]/).max(100).min(4).error(new Error('Full names are required and must be letters and not less than 4')),
     phone: string.regex(/^[0-9]+$/).max(10).min(10).error(new Error("Telephone must be 10 numbers and required")),
-    id_number: string.regex(/^[0-9]+$/).max(16).min(16).error(new Error("ID must be 16 numbers and required"))
+    id_number: string.regex(/^[0-9]+$/).max(16).min(16).error(new Error("ID must be 16 numbers and required")),
+    age: string.regex(/^[0-9]+$/).max(50).error(new Error("Age is required and must be a number")),
+    district: string.regex(/^[A-Za-z]/).max(50).error(new Error('District is required and must be letters only')),
+    sector: string.regex(/^[A-Za-z]/).max(50).error(new Error('District is required and must be letters only'))
   }),
 
   Hospitallogin: Joi.object({
@@ -52,6 +55,15 @@ export const appSchema = {
     phone: string.regex(/^[0-9]+$/).max(10).min(10).error(new Error("Telephone must be 10 numbers and required")),
     password: string.min(6).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{6,})/).error(new Error('Password must be 6 characters long with a capital letter and a number')),
     role: string.error(new Error('Role is required'))
+  }),
+
+  updatePassword: Joi.object({
+    password: string.min(6).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{6,})/).error(new Error('Password must be 6 characters long with a capital letter and a number'))
+  }),
+
+  searchPatient: Joi.object({
+    phone: string.regex(/^[0-9]+$/).max(10).min(10).error(new Error("Telephone must be 10 numbers and required")),
+    id_number: string.regex(/^[0-9]+$/).max(16).min(16).error(new Error("ID must be 16 numbers and required")),
   })
 
 };

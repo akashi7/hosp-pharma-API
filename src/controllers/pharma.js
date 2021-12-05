@@ -1,4 +1,5 @@
 import { db } from "../config/database";
+import moment from "moment";
 
 
 export default class pharmacyController {
@@ -42,12 +43,13 @@ export default class pharmacyController {
   }
 
   static ViewRequest(req, res) {
-    const { code, id_number } = req.body;
+
+    const { phone, id_number } = req.body;
 
     db.getConnection((err, connection) => {
       if (err) console.log("err", err);
       else {
-        connection.query("SELECT * FROM information WHERE code=? AND id_number=?", [code, id_number], (err, result) => {
+        connection.query("SELECT * FROM patients WHERE phone=? AND id_number=?", [phone, id_number], (err, result) => {
           if (err) console.log("err", err);
           else if (result.length === 0) {
             res.send({
@@ -58,6 +60,7 @@ export default class pharmacyController {
           else {
             res.send({
               status: 200,
+              phone
             });
           }
           connection.release();
@@ -86,8 +89,7 @@ export default class pharmacyController {
   }
 
   static addQuantity(req, res) {
-    const { id } = req.query;
-    const { quantity } = req.body;
+    const { id, quantity } = req.query;
 
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
@@ -98,7 +100,7 @@ export default class pharmacyController {
             let Quantity = result[0].quantity;
             let newQuantity = parseInt(quantity) + parseInt(Quantity);
 
-            connection.query("UPDATE medecines SET quantity WHERE id=?", [newQuantity, id], (err, results) => {
+            connection.query("UPDATE medecines SET quantity=? WHERE id=?", [newQuantity, id], (err, results) => {
               if (err) console.log("Error", err);
               else {
                 res.send({
@@ -115,8 +117,7 @@ export default class pharmacyController {
   }
 
   static removeQuantity(req, res) {
-    const { id } = req.query;
-    const { quantity } = req.body;
+    const { id, quantity } = req.query;
 
     let diff;
 
@@ -128,7 +129,7 @@ export default class pharmacyController {
           else {
             let Quantity = result[0].quantity;
 
-            parseInt(Quantity) - parseInt(quantity) < 0 ? diff === 0 : diff === 1;
+            (parseInt(Quantity) - parseInt(quantity) < 0) ? diff = 0 : diff = 1;
 
             if (diff === 0) {
               res.send({
@@ -138,7 +139,7 @@ export default class pharmacyController {
             }
             else {
               let newQuantity = parseInt(Quantity) - parseInt(quantity);
-              connection.query("UPDATE medecines SET quantity WHERE id=?", [newQuantity, id], (err, results) => {
+              connection.query("UPDATE medecines SET quantity=? WHERE id=?", [newQuantity, id], (err, results) => {
                 if (err) console.log("Error", err);
                 else {
                   res.send({
@@ -161,12 +162,15 @@ export default class pharmacyController {
     const today = new Date();
     const date = today.toLocaleDateString();
 
-    const { code } = req.query;
+    const Dates = moment(date).format("DD/MM/YYYY");
+
+    const { phone } = req.query;
+
 
     db.getConnection((err, connection) => {
       if (err) console.log("err", err);
       else {
-        connection.query("SELECT * FROM information WHERE date=? AND code=?", [date, code], (err, result) => {
+        connection.query("SELECT * FROM information WHERE date=? AND patient_phone=?", [Dates, phone], (err, result) => {
           if (err) console.log("err", err);
           else {
             res.send({
@@ -205,18 +209,24 @@ export default class pharmacyController {
   }
 
   static filterDate(req, res) {
-    const { date } = req.body;
-    const { code } = req.query;
+    const { phone, date } = req.query;
+
+    let dateTime = moment(date).format("DD/MM/YYYY");
 
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
-        connection.query("SELECT * FROM information WHERE date=? AND code=?", [date, code], (err, result) => {
+        connection.query("SELECT * FROM information WHERE date=? AND patient_phone=?", [dateTime, phone], (err, result) => {
           if (err) console.log("Error", err);
+          if (result.length === 0) {
+            res.send({
+              status: 203,
+            });
+          }
           else {
             res.send({
               status: 200,
-              data: { searchedData: result }
+              data: result
             });
           }
           connection.release();

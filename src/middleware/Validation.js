@@ -35,8 +35,8 @@ export default class Validation {
 
   static PatientRegVal(req, res, next) {
 
-    const { full_names, phone, id_number } = req.body;
-    const { error } = appSchema.PatientSignUp.validate({ full_names, phone, id_number });
+    const { full_names, phone, id_number, age, district, sector } = req.body;
+    const { error } = appSchema.PatientSignUp.validate({ full_names, phone, id_number, age, district, sector });
 
     if (error) {
       res.send({
@@ -94,6 +94,54 @@ export default class Validation {
     const { full_names, phone, password, role } = req.body;
     const { error } = appSchema.doctorReg.validate({ full_names, phone, password, role });
 
+    if (error) {
+      res.send({
+        status: 409,
+        error: error.message
+      });
+    }
+    else next();
+  }
+
+  static InsertMedVal(req, res, next) {
+    const { med_name, quantity } = req.body;
+    const { error } = appSchema.InsertMedecine.validate({ med_name, quantity });
+    if (error) {
+      res.send({
+        status: 409,
+        error: error.message
+      });
+    }
+    else next();
+  }
+
+  static QuantityVal(req, res, next) {
+    const { quantity } = req.query;
+    const { error } = appSchema.Quantity.validate({ quantity });
+    if (error) {
+      res.send({
+        status: 409,
+        error: error.message
+      });
+    }
+    else next();
+  }
+
+  static UpdatePasswordVal(req, res, next) {
+    const { password } = req.body;
+    const { error } = appSchema.updatePassword.validate({ password });
+    if (error) {
+      res.send({
+        status: 409,
+        error: error.message
+      });
+    }
+    else next();
+  }
+
+  static searchPatient(req, res, next) {
+    const { phone, id_number } = req.body;
+    const { error } = appSchema.searchPatient.validate({ phone, id_number });
     if (error) {
       res.send({
         status: 409,

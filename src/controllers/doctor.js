@@ -1,20 +1,30 @@
 import { db } from "../config/database";
 import { hash, compare } from "bcryptjs";
+import moment from "moment";
 
 
 export default class doctorController {
 
   static searchPatient(req, res) {
-    const { code } = req.body;
+
+    const { phone } = req.query;
+
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
-        connection.query("SELECT * FROM patients WHERE code=?", [code], (err, result) => {
+        connection.query("SELECT * FROM patients WHERE phone=?", [phone], (err, result) => {
           if (err) console.log("Error", err);
+          else if (result.length === 0) {
+            res.send({
+              status: 300,
+              message: "Patient not found"
+            });
+          }
           else {
             res.send({
               status: 200,
-              data: { patient: result }
+              data: { patient: result },
+              phone
             });
           }
           connection.release();
@@ -24,11 +34,13 @@ export default class doctorController {
   }
 
   static viewPreviousRecord(req, res) {
-    const { code, id_number } = req.body;
+
+    const { phone, id_number } = req.body;
+
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
-        connection.query("SELECT * FROM patients WHERE code=? AND id_number=?", [code, id_number], (err, result) => {
+        connection.query("SELECT * FROM patients WHERE phone=? AND id_number=?", [phone, id_number], (err, result) => {
           if (err) console.log("Error", err);
           else if (result.length === 0) {
             res.send({
@@ -37,7 +49,7 @@ export default class doctorController {
             });
           }
           else {
-            connection.query("SELECT * FROM information WHERE u_code=?", [code], (err, results) => {
+            connection.query("SELECT * FROM information WHERE patient_phone=?", [phone], (err, results) => {
               if (err) console.log("Error", err);
               else {
                 res.send({
@@ -54,15 +66,16 @@ export default class doctorController {
   }
 
   static allMedecines(req, res) {
+
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
-        connection.query("SELECT * FROM medecines", (err, result) => {
+        connection.query("SELECT id,med_name FROM medecines", (err, result) => {
           if (err) console.log("Error", err);
           else {
             res.send({
               status: 200,
-              data: { allMeds: result }
+              data: result
             });
           }
           connection.release();
@@ -72,14 +85,53 @@ export default class doctorController {
   }
 
   static sendReport(req, res) {
-    const { disease, meds } = req.body;
-    const [...medecines] = meds;
+    const { disease, medecines } = req.body;
+    const { patient_name, patient_phone } = req.query;
+    const { h_name, full_names } = req.doc;
+
+    const time = new Date();
+    const dateTime = time.toLocaleDateString();
+    const newDate = moment(dateTime).format("DD/MM/YYYY");
+
+    const Medecines = medecines.toString();
+    const length = medecines.length;
+
+    db.getConnection((err, connection) => {
+      if (err) console.log("Error", err);
+      else {
+        connection.query(`SELECT ph_name FROM medecines WHERE med_name IN (?) AND quantity >1 GROUP BY code HAVING COUNT(DISTINCT med_name)=${length} ORDER BY quantity DESC LIMIT 5 `, [medecines], (err, result) => {
+          if (err) console.log("Error", err);
+          else {
+            connection.query("INSERT INTO information SET?", {
+              patient_name,
+              date: newDate,
+              hospital_name: h_name,
+              doctor_name: full_names,
+              disease,
+              medecines: Medecines,
+              patient_phone
+            }, (err, results) => {
+              if (err) console.log("Error", err);
+              else {
+                console.log("result", result);
+                res.send({
+                  status: 200,
+                });
+              }
+              connection.release();
+            });
+          }
+        });
+      }
+    });
+
+
 
   }
 
   static EditPassword(req, res) {
     const { password, confirmPassword, oldPassword } = req.body;
-    const { phone } = req.doctor;
+    const { phone } = req.doc;
 
     if (password !== confirmPassword) {
       res.send({

@@ -70,15 +70,15 @@ export default class IsloggedIn {
         });
       }
       else {
-        if (decoded.is_doc !== '1') {
+        if (decoded.is_doc === '1') {
+          req.doc = decoded;
+          next();
+        }
+        else {
           res.send({
             status: 401,
             message: 'Must be doctor'
           });
-        }
-        else {
-          req.doc = decoded;
-          next();
         }
       }
     });

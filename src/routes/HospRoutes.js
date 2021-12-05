@@ -7,7 +7,7 @@ const hospRouter = Router();
 
 
 hospRouter.post("/registerDoc", IsloggedIn.isHospAdmin, Validation.DoctorsReg, hospitalController.createDoctors);
-hospRouter.post('/registerRecept', hospitalController.createReceiptionist);
+hospRouter.post('/registerRecept', IsloggedIn.isHospAdmin, hospitalController.createReceiptionist);
 hospRouter.get('/allDoctors', IsloggedIn.isHospAdmin, hospitalController.viewAllDoctors);
 
 

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import authController from "../controllers/auth";
 import Validation from "../middleware/Validation";
+import IsloggedIn from "../middleware/RequiredLogin";
 
 const authRouter = Router();
 
@@ -14,7 +15,7 @@ authRouter.post("/registerPharmacy", Validation.PharmacyRegVal, authController.C
 
 // create patient
 
-authRouter.post("/registerPatient", Validation.PatientRegVal, authController.CreatePatients);
+authRouter.post("/registerPatient", IsloggedIn.isReceptionist, Validation.PatientRegVal, authController.CreatePatients);
 
 //Hospital login
 
