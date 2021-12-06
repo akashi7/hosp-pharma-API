@@ -43,13 +43,20 @@ export default class authController {
               }, (err, results) => {
                 if (err) console.log("Error", err);
                 else {
-                  const token = sign({ code, h_name }, process.env.JWT_SECRET, { expiresIn: "5d" });
-                  res.send({
-                    status: 200,
-                    token
+
+                  connection.query("SELECT * FROM hospitals WHERE code=?", [code], (err, resultz) => {
+                    if (err) console.log("Error", err);
+                    else {
+                      const { code, h_name, is_hadmin } = result[0];
+                      const token = sign({ code, h_name, is_hadmin }, process.env.JWT_SECRET, { expiresIn: "5d" });
+                      res.send({
+                        status: 200,
+                        token
+                      });
+                    }
+                    connection.release();
                   });
                 }
-                connection.release();
               });
             }
           });
@@ -146,10 +153,10 @@ export default class authController {
                 connection.query("SELECT * FROM patients WHERE phone=?", [phone], (err, answer) => {
                   if (err) console.log("Error", err);
                   else {
-                    const { code } = answer[0];
+                    const { id } = answer[0];
                     res.send({
                       status: 200,
-                      code
+                      code: id
                     });
                   }
                   connection.release();
@@ -225,8 +232,8 @@ export default class authController {
               });
             }
             else {
-              const { code, ph_name, is_phadmin } = result[0];
-              const token = sign({ code, ph_name, is_phadmin }, process.env.JWT_SECRET, { expiresIn: "5d" });
+              const { code, ph_name, is_phadmin, location } = result[0];
+              const token = sign({ code, ph_name, is_phadmin, location }, process.env.JWT_SECRET, { expiresIn: "5d" });
               res.send({
                 status: 200,
                 token

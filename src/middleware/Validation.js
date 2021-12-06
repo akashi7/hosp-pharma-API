@@ -140,8 +140,20 @@ export default class Validation {
   }
 
   static searchPatient(req, res, next) {
-    const { phone, id_number } = req.body;
-    const { error } = appSchema.searchPatient.validate({ phone, id_number });
+    const { code, id_number } = req.body;
+    const { error } = appSchema.searchPatient.validate({ code, id_number });
+    if (error) {
+      res.send({
+        status: 409,
+        error: error.message
+      });
+    }
+    else next();
+  }
+
+  static searchPatientTwo(req, res, next) {
+    const { code, id_number } = req.query;
+    const { error } = appSchema.searchPatient.validate({ code, id_number });
     if (error) {
       res.send({
         status: 409,

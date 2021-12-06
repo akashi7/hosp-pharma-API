@@ -1,18 +1,20 @@
 import { db } from "../config/database";
 import { hash, compare } from "bcryptjs";
 import moment from "moment";
+import { nexmo } from "../config/nexmo";
+import { v4 as uuidV4 } from 'uuid';
 
 
 export default class doctorController {
 
   static searchPatient(req, res) {
 
-    const { phone } = req.query;
+    const { code } = req.query;
 
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
-        connection.query("SELECT * FROM patients WHERE phone=?", [phone], (err, result) => {
+        connection.query("SELECT * FROM patients WHERE id=?", [code], (err, result) => {
           if (err) console.log("Error", err);
           else if (result.length === 0) {
             res.send({
@@ -21,10 +23,11 @@ export default class doctorController {
             });
           }
           else {
+            const { id } = result[0];
             res.send({
               status: 200,
               data: { patient: result },
-              phone
+              code: id
             });
           }
           connection.release();
@@ -34,13 +37,12 @@ export default class doctorController {
   }
 
   static viewPreviousRecord(req, res) {
-
-    const { phone, id_number } = req.body;
+    const { code, id_number } = req.query;
 
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
-        connection.query("SELECT * FROM patients WHERE phone=? AND id_number=?", [phone, id_number], (err, result) => {
+        connection.query("SELECT * FROM patients WHERE id=? AND id_number=?", [code, id_number], (err, result) => {
           if (err) console.log("Error", err);
           else if (result.length === 0) {
             res.send({
@@ -49,7 +51,8 @@ export default class doctorController {
             });
           }
           else {
-            connection.query("SELECT * FROM information WHERE patient_phone=?", [phone], (err, results) => {
+            const { phone } = result[0];
+            connection.query("SELECT * FROM information WHERE patient_phone=? ORDER BY id DESC", [phone], (err, results) => {
               if (err) console.log("Error", err);
               else {
                 res.send({
@@ -89,6 +92,8 @@ export default class doctorController {
     const { patient_name, patient_phone } = req.query;
     const { h_name, full_names } = req.doc;
 
+    let address, pharmacy, locations;
+
     const time = new Date();
     const dateTime = time.toLocaleDateString();
     const newDate = moment(dateTime).format("DD/MM/YYYY");
@@ -96,10 +101,12 @@ export default class doctorController {
     const Medecines = medecines.toString();
     const length = medecines.length;
 
+    const Tel = `25${patient_phone}`;
+
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
-        connection.query(`SELECT ph_name FROM medecines WHERE med_name IN (?) AND quantity >1 GROUP BY code HAVING COUNT(DISTINCT med_name)=${length} ORDER BY quantity DESC LIMIT 5 `, [medecines], (err, result) => {
+        connection.query(`SELECT ph_name,location FROM medecines WHERE med_name IN (?) AND quantity >1 GROUP BY code HAVING COUNT(DISTINCT med_name)=${length} ORDER BY quantity DESC LIMIT 3 `, [medecines], (err, result) => {
           if (err) console.log("Error", err);
           else {
             connection.query("INSERT INTO information SET?", {
@@ -113,12 +120,37 @@ export default class doctorController {
             }, (err, results) => {
               if (err) console.log("Error", err);
               else {
-                console.log("result", result);
-                res.send({
-                  status: 200,
+                const [...phName] = result.map(item => item.ph_name);
+                const [...Location] = result.map(item => item.location);
+
+                const ph_name = phName.toString();
+                const pH = ph_name.replace(',', " or ");
+                const location = Location.toString();
+                const from = `${h_name} Hospital`;
+                const to = Tel;
+
+                phName.length === 1 ? address = "address" : address = "addresses";
+                phName.length === 1 ? pharmacy = "pharmacy" : pharmacy = "pharmacies";
+
+                Location.length === 1 ? locations = "" : locations = "rescpectively";
+
+                const text = `Dear ${patient_name} go to ${pH} ${pharmacy} with ${address} of ${location} ${locations} to retrieve your medecines , regards`;
+
+                nexmo.message.sendSms(from, to, text, (err, results) => {
+                  if (err) {
+                    res.send({
+                      status: 307,
+                      message: "Sending message failed"
+                    });
+                  }
+                  else {
+                    res.send({
+                      status: 200
+                    });
+                  }
+                  connection.release();
                 });
               }
-              connection.release();
             });
           }
         });
@@ -171,5 +203,76 @@ export default class doctorController {
     }
   }
 
+  static docForgotPassword(req, res) {
+
+    const { phone } = req.body;
+
+    const Tel = `25${phone}`;
+
+    const code = uuidV4();
+
+    db.getConnection((err, connection) => {
+      if (err) console.log("Error", err);
+      else {
+        connection.query("SELECT * FROM doctors WHERE phone=?", [phone], (err, result) => {
+          if (err) console.log("Error", err);
+          else if (result.length === 0) {
+            res.send({ status: 300, message: "Doctor do not exist" });
+          }
+          else {
+            const from = 'SYSTEM RECOVERY';
+            const to = Tel;
+            const text = `Your code is ${code}`;
+
+            nexmo.message.sendSms(from, to, text, (err, results) => {
+              if (err) {
+                res.send({
+                  status: 307,
+                  message: "Sending message failed"
+                });
+              }
+              else {
+                res.send({
+                  status: 200,
+                  phone,
+                  code
+                });
+              }
+              connection.release();
+            });
+          }
+        });
+      }
+    });
+  }
+
+  static resetPassword(req, res) {
+
+    const { password } = req.body;
+    const { confirmPassword, phone } = req.query;
+    if (password !== confirmPassword) {
+      res.send({
+        status: 205,
+        message: "Passwords do not match"
+      });
+    }
+    else {
+      db.getConnection(async (err, connection) => {
+        if (err) console.log("Error", err);
+        else {
+          let hashedPassword = await hash(password, 8);
+          connection.query("UPDATE doctors SET password=? WHERE phone=?", [hashedPassword, phone], (err, result) => {
+            if (err) console.log("Error", err);
+            else {
+              res.send({
+                status: 200
+              });
+            }
+            connection.release();
+          });
+        }
+      });
+    }
+  }
 }
 

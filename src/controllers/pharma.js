@@ -5,7 +5,7 @@ import moment from "moment";
 export default class pharmacyController {
 
   static InsertMedecine(req, res) {
-    const { code, ph_name } = req.pharma;
+    const { code, ph_name, location } = req.pharma;
     const { med_name, quantity } = req.body;
 
 
@@ -25,7 +25,8 @@ export default class pharmacyController {
               code,
               ph_name,
               med_name,
-              quantity
+              quantity,
+              location
             }, (err, results) => {
               if (err) console.log("err", err);
               else {
@@ -44,12 +45,12 @@ export default class pharmacyController {
 
   static ViewRequest(req, res) {
 
-    const { phone, id_number } = req.body;
+    const { code, id_number } = req.body;
 
     db.getConnection((err, connection) => {
       if (err) console.log("err", err);
       else {
-        connection.query("SELECT * FROM patients WHERE phone=? AND id_number=?", [phone, id_number], (err, result) => {
+        connection.query("SELECT * FROM patients WHERE id=? AND id_number=?", [code, id_number], (err, result) => {
           if (err) console.log("err", err);
           else if (result.length === 0) {
             res.send({
@@ -58,6 +59,7 @@ export default class pharmacyController {
             });
           }
           else {
+            const { phone } = result[0];
             res.send({
               status: 200,
               phone

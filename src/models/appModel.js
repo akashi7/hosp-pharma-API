@@ -62,8 +62,9 @@ export const appSchema = {
   }),
 
   searchPatient: Joi.object({
-    phone: string.regex(/^[0-9]+$/).max(10).min(10).error(new Error("Telephone must be 10 numbers and required")),
+    code: string.regex(/^[0-9]+$/).max(100).error(new Error("Code must be number and required")),
     id_number: string.regex(/^[0-9]+$/).max(16).min(16).error(new Error("ID must be 16 numbers and required")),
   })
+
 
 };
