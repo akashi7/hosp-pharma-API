@@ -5,7 +5,7 @@ import moment from "moment";
 export default class pharmacyController {
 
   static InsertMedecine(req, res) {
-    const { code, ph_name, location } = req.pharma;
+    const { code, ph_name, location, sector } = req.pharma;
     const { med_name, quantity } = req.body;
 
 
@@ -26,7 +26,8 @@ export default class pharmacyController {
               ph_name,
               med_name,
               quantity,
-              location
+              location,
+              sector
             }, (err, results) => {
               if (err) console.log("err", err);
               else {

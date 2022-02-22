@@ -89,7 +89,7 @@ export default class doctorController {
 
   static sendReport(req, res) {
     const { disease, medecines } = req.body;
-    const { patient_name, patient_phone } = req.query;
+    const { patient_name, patient_phone, insurance } = req.query;
     const { h_name, full_names } = req.doc;
 
     let address, pharmacy, locations;
@@ -106,7 +106,7 @@ export default class doctorController {
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
-        connection.query(`SELECT ph_name,location FROM medecines WHERE med_name IN (?) AND quantity >1 GROUP BY code HAVING COUNT(DISTINCT med_name)=${length} ORDER BY quantity DESC LIMIT 3 `, [medecines], (err, result) => {
+        connection.query(`SELECT ph_name,location FROM medecines WHERE med_name IN (?) AND insurance =? GROUP BY code HAVING COUNT(DISTINCT med_name)=${length} ORDER BY quantity DESC LIMIT 3 `, [medecines, insurance], (err, result) => {
           if (err) console.log("Error", err);
           else {
             connection.query("INSERT INTO information SET?", {
@@ -120,8 +120,8 @@ export default class doctorController {
             }, (err, results) => {
               if (err) console.log("Error", err);
               else {
-                const [...phName] = result.map(item => item.ph_name);
-                const [...Location] = result.map(item => item.location);
+                const [...phName] = result.map(({ ph_name }) => ph_name);
+                const [...Location] = result.map(({ location }) => location);
 
                 const ph_name = phName.toString();
                 const pH = ph_name.replace(',', " or ");
@@ -131,11 +131,8 @@ export default class doctorController {
 
                 phName.length === 1 ? address = "address" : address = "addresses";
                 phName.length === 1 ? pharmacy = "pharmacy" : pharmacy = "pharmacies";
-
-                Location.length === 1 ? locations = "" : locations = "rescpectively";
-
+                Location.length === 1 ? locations = "" : locations = "respectively";
                 const text = `Dear ${patient_name} go to ${pH} ${pharmacy} with ${address} of ${location} ${locations} to retrieve your medecines , regards`;
-
                 nexmo.message.sendSms(from, to, text, (err, results) => {
                   if (err) {
                     res.send({
@@ -204,11 +201,8 @@ export default class doctorController {
   }
 
   static docForgotPassword(req, res) {
-
     const { phone } = req.body;
-
     const Tel = `25${phone}`;
-
     const code = uuidV4();
 
     db.getConnection((err, connection) => {
@@ -247,7 +241,6 @@ export default class doctorController {
   }
 
   static resetPassword(req, res) {
-
     const { password } = req.body;
     const { confirmPassword, phone } = req.query;
     if (password !== confirmPassword) {

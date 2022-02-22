@@ -69,7 +69,7 @@ export default class authController {
   //create pharmacy
 
   static CreatePharmacy(req, res) {
-    const { code, ph_name, password, confirmPassword } = req.body;
+    const { code, ph_name, password, confirmPassword, sector } = req.body;
     const { location } = req.query;
 
     if (password !== confirmPassword) {
@@ -97,7 +97,8 @@ export default class authController {
                 code,
                 ph_name, location,
                 password: hashedPassword,
-                is_phadmin
+                is_phadmin,
+                sector
               }, (err, results) => {
                 if (err) console.log("Error", err);
                 else {
@@ -126,13 +127,15 @@ export default class authController {
 
   static CreatePatients(req, res) {
 
-    const { full_names, phone, id_number, age, district, sector } = req.body;
+    const { full_names, phone, id_number, age, district, sector, insurance } = req.body;
 
     db.getConnection((err, connection) => {
-      if (err) console.log("Error", err);
+      if (err)
+        console.log("Error", err);
       else {
         connection.query("SELECT * FROM patients WHERE phone=?", [phone], (err, result) => {
-          if (err) console.log("Error", err);
+          if (err)
+            console.log("Error", err);
           else if (result.length > 0) {
             res.send({
               status: 205,
@@ -146,12 +149,15 @@ export default class authController {
               id_number,
               age,
               district,
-              sector
+              sector,
+              insurance
             }, (err, results) => {
-              if (err) console.log("Error", err);
+              if (err)
+                console.log("Error", err);
               else {
                 connection.query("SELECT * FROM patients WHERE phone=?", [phone], (err, answer) => {
-                  if (err) console.log("Error", err);
+                  if (err)
+                    console.log("Error", err);
                   else {
                     const { id } = answer[0];
                     res.send({
@@ -168,7 +174,6 @@ export default class authController {
       }
     });
   }
-
 
   //LOGINS
 
@@ -232,8 +237,8 @@ export default class authController {
               });
             }
             else {
-              const { code, ph_name, is_phadmin, location } = result[0];
-              const token = sign({ code, ph_name, is_phadmin, location }, process.env.JWT_SECRET, { expiresIn: "5d" });
+              const { code, ph_name, is_phadmin, location, sector } = result[0];
+              const token = sign({ code, ph_name, is_phadmin, location, sector }, process.env.JWT_SECRET, { expiresIn: "5d" });
               res.send({
                 status: 200,
                 token
