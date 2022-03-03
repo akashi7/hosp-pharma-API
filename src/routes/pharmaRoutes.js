@@ -14,7 +14,8 @@ pharmaRouter.patch('/approveMeds', IsloggedIn.isPharmacyAdmin, pharmacyControlle
 pharmaRouter.patch('/filterDate', IsloggedIn.isPharmacyAdmin, pharmacyController.filterDate);
 pharmaRouter.patch('/addMedQuantity', IsloggedIn.isPharmacyAdmin, Validation.QuantityVal, pharmacyController.addQuantity);
 pharmaRouter.patch('/removeMedQuantity', IsloggedIn.isPharmacyAdmin, Validation.QuantityVal, pharmacyController.removeQuantity);
-
+pharmaRouter.post('/insertInsurance', IsloggedIn.isPharmacyAdmin, pharmacyController.registerInsurance);
+pharmaRouter.get("/allInsurance", IsloggedIn.isPharmacyAdmin, pharmacyController.seeAllInsurance);
 
 
 export default pharmaRouter;

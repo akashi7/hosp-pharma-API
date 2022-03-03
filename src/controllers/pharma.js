@@ -239,6 +239,61 @@ export default class pharmacyController {
 
   }
 
+  static registerInsurance(req, res) {
+    const { code } = req.pharma;
+    const { insurance } = req.body;
+
+    db.getConnection((err, connection) => {
+      if (err) console.log("ConnectionError", err);
+      else {
+        connection.query("SELECT * FROM insurances WHERE code=? AND insurance=?", [code, insurance], (err, result) => {
+          if (err) console.log("Error", err);
+          else if (result.length > 1) {
+            res.send({
+              status: 205,
+              message: "Insurance arleady registered"
+            });
+          }
+          else {
+            connection.query("INSERT INTO insurances SET?", {
+              code,
+              insurance
+            }, (err, results) => {
+              if (err) console.log("Error", err);
+              else {
+                res.send({
+                  status: 200,
+                  message: "Insurance inserted succesfully"
+                });
+              }
+              connection.release();
+            });
+          }
+        });
+      }
+    });
+
+  }
+
+  static seeAllInsurance(req, res) {
+    const { code } = req.pharma;
+    db.getConnection((err, connection) => {
+      if (err) console.log("ConnectionError", err);
+      else {
+        connection.query("SELECT * FROM insurances WHERE code=?", [code], (err, result) => {
+          if (err) console.log("Error", err);
+          else {
+            res.send({
+              status: 200,
+              data: { insurance: result }
+            });
+          }
+          connection.release();
+        });
+      }
+    });
+  }
+
 
 
 }
