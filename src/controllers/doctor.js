@@ -1,8 +1,9 @@
-import { db } from "../config/database";
-import { hash, compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import moment from "moment";
-import { nexmo } from "../config/nexmo";
 import { v4 as uuidV4 } from 'uuid';
+import { db } from "../config/database";
+import { nexmo } from "../config/nexmo";
+import { client } from "../config/twilio";
 
 
 export default class doctorController {
@@ -89,7 +90,7 @@ export default class doctorController {
 
   static sendReport(req, res) {
     const { disease, medecines } = req.body;
-    const { patient_name, patient_phone, insurance } = req.query;
+    const { patient_name, patient_phone } = req.query;
     const { h_name, full_names } = req.doc;
 
     let address, pharmacy, locations;
@@ -101,12 +102,12 @@ export default class doctorController {
     const Medecines = medecines.toString();
     const length = medecines.length;
 
-    const Tel = `25${patient_phone}`;
+    const Tel = `+25${patient_phone}`;
 
     db.getConnection((err, connection) => {
       if (err) console.log("Error", err);
       else {
-        connection.query(`SELECT ph_name,location FROM medecines WHERE med_name IN (?) AND insurance =? GROUP BY code HAVING COUNT(DISTINCT med_name)=${length} ORDER BY quantity DESC LIMIT 3 `, [medecines, insurance], (err, result) => {
+        connection.query(`SELECT ph_name,location FROM medecines WHERE med_name IN (?) GROUP BY code HAVING COUNT(DISTINCT med_name)=${length} ORDER BY quantity DESC LIMIT 3 `, [medecines], (err, result) => {
           if (err) console.log("Error", err);
           else {
             connection.query("INSERT INTO information SET?", {
@@ -132,9 +133,11 @@ export default class doctorController {
                 phName.length === 1 ? address = "address" : address = "addresses";
                 phName.length === 1 ? pharmacy = "pharmacy" : pharmacy = "pharmacies";
                 Location.length === 1 ? locations = "" : locations = "respectively";
-                const text = `Dear ${patient_name} go to ${pH} ${pharmacy} with ${address} of ${location} ${locations} to retrieve your medecines , regards`;
-                nexmo.message.sendSms(from, to, text, (err, results) => {
+                const text = ` ${from} Dear ${patient_name} go to ${pH} ${pharmacy} with ${address} of ${location} ${locations} to retrieve your medecines , regards`;
+
+                client.messages.create({ body: text, to: to, from: "+17745511133" }, (err, resultss) => {
                   if (err) {
+                    console.log('cli err', err);
                     res.send({
                       status: 307,
                       message: "Sending message failed"
@@ -147,6 +150,8 @@ export default class doctorController {
                   }
                   connection.release();
                 });
+
+
               }
             });
           }
